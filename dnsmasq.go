@@ -32,6 +32,7 @@ var (
 		"localhost:9153",
 		"listen address")
 
+	ignoreLeases = flag.Bool("ignore_leases", false, "do not export leases statistics")
 	exposeLeases = flag.Bool("expose_leases",
 		false,
 		"expose dnsmasq leases as metrics (high cardinality)")
@@ -63,6 +64,7 @@ func main() {
 			DnsmasqAddr:  *dnsmasqAddr,
 			LeasesPath:   *leasesPath,
 			ExposeLeases: *exposeLeases,
+			IgnoreLeases: *ignoreLeases,
 		}
 		collector = collector.New(cfg)
 		reg       = prometheus.NewRegistry()

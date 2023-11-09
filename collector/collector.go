@@ -112,6 +112,7 @@ type Config struct {
 	DnsmasqAddr  string
 	LeasesPath   string
 	ExposeLeases bool
+	IgnoreLeases bool
 }
 
 // Collector implements prometheus.Collector and exposes dnsmasq metrics.
@@ -209,21 +210,23 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 		return nil
 	})
 
-	eg.Go(func() error {
-		activeLeases, err := readLeaseFile(c.cfg.LeasesPath)
-		if err != nil {
-			return err
-		}
-		ch <- prometheus.MustNewConstMetric(leases, prometheus.GaugeValue, float64(len(activeLeases)))
-
-		if c.cfg.ExposeLeases {
-			for _, activeLease := range activeLeases {
-				ch <- prometheus.MustNewConstMetric(leaseMetrics, prometheus.GaugeValue, float64(activeLease.expiry),
-					activeLease.macAddress, activeLease.ipAddress, activeLease.computerName, activeLease.clientId)
+	if !c.cfg.IgnoreLeases {
+		eg.Go(func() error {
+			activeLeases, err := readLeaseFile(c.cfg.LeasesPath)
+			if err != nil {
+				return err
 			}
-		}
-		return nil
-	})
+			ch <- prometheus.MustNewConstMetric(leases, prometheus.GaugeValue, float64(len(activeLeases)))
+
+			if c.cfg.ExposeLeases {
+				for _, activeLease := range activeLeases {
+					ch <- prometheus.MustNewConstMetric(leaseMetrics, prometheus.GaugeValue, float64(activeLease.expiry),
+						activeLease.macAddress, activeLease.ipAddress, activeLease.computerName, activeLease.clientId)
+				}
+			}
+			return nil
+		})
+	}
 
 	if err := eg.Wait(); err != nil {
 		log.Printf("could not complete scrape: %v", err)
