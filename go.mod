@@ -1,4 +1,4 @@
-module github.com/google/dnsmasq_exporter
+module github.com/trueneu/dnsmasq_exporter
 
 go 1.12
 

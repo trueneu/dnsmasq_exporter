@@ -20,11 +20,11 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/google/dnsmasq_exporter/collector"
 	"github.com/miekg/dns"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/version"
+	"github.com/trueneu/dnsmasq_exporter/collector"
 )
 
 var (
