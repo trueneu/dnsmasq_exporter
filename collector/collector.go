@@ -150,26 +150,36 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	var eg errgroup.Group
 
 	eg.Go(func() error {
-		msg := &dns.Msg{
-			MsgHdr: dns.MsgHdr{
-				Id:               dns.Id(),
-				RecursionDesired: true,
-			},
-			Question: []dns.Question{
-				question("cachesize.bind."),
-				question("insertions.bind."),
-				question("evictions.bind."),
-				question("misses.bind."),
-				question("hits.bind."),
-				question("auth.bind."),
-				question("servers.bind."),
-			},
+		questions := []dns.Question{
+			question("cachesize.bind."),
+			question("insertions.bind."),
+			question("evictions.bind."),
+			question("misses.bind."),
+			question("hits.bind."),
+			question("auth.bind."),
+			question("servers.bind."),
 		}
-		in, _, err := c.cfg.DnsClient.Exchange(msg, c.cfg.DnsmasqAddr)
-		if err != nil {
-			return err
+
+		answers := make([]dns.RR, 0)
+
+		for _, q := range questions {
+			msg := &dns.Msg{
+				MsgHdr: dns.MsgHdr{
+					Id:               dns.Id(),
+					RecursionDesired: true,
+				},
+				Question: []dns.Question{q},
+			}
+			in, _, err := c.cfg.DnsClient.Exchange(msg, c.cfg.DnsmasqAddr)
+			if err != nil {
+				return err
+			}
+			for _, a := range in.Answer {
+				answers = append(answers, a)
+			}
 		}
-		for _, a := range in.Answer {
+
+		for _, a := range answers {
 			txt, ok := a.(*dns.TXT)
 			if !ok {
 				continue
